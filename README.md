@@ -120,6 +120,8 @@ xbased doesn't include any copyrighted Xbox software.
   the game allows it (anything but Original can break a game).
 - **Downloaded content and title updates** copied into
   `hdd/Partition1/TDATA/<title id>/` are signed for xbased as the game starts.
+  A game's **Title updates & DLC** page installs them from a .zip, or finds
+  and downloads them from xbmc4gamers.co.uk's URL Downloader.
 - **Add your own**: drop the IPS patches shared online into
   `mods/<TITLE ID>/` and they show up in the game's menu
   ([MODS.md](mods/README.md)).

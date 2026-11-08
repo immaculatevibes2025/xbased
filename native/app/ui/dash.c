@@ -1884,6 +1884,10 @@ static void scr_game(void)
         D.sel[SCR_MODS] = 0;
         dash_push(SCR_MODS);
     }
+    if (list_row(&l, T(S_CONTENT), NULL, NULL)) {
+        D.sel[SCR_CONTENT] = 0;
+        dash_push(SCR_CONTENT);
+    }
     if (list_row(&l, T(S_CONTROLS), NULL, NULL)) {
         D.editing_game = true;
         D.player = 0;
@@ -2230,6 +2234,7 @@ int dash_run(SDL_Window *win, const char *exe)
         case SCR_ABOUT: scr_about(); break;
         case SCR_BROWSE: scr_browse(); break;
         case SCR_FIND: scr_find(); break;
+        case SCR_CONTENT: scr_content(); break;
         default: break;
         }
         ui_layer_end();

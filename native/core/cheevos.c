@@ -145,11 +145,7 @@ static void save_unlock(const char *name)
 {
     char p[1200];
     snprintf(p, sizeof(p), "%sachievements", g_data_dir);
-#ifdef _WIN32
-    mkdir(p);
-#else
-    mkdir(p, 0775);
-#endif
+    mkdir(p, 0775);     /* the platform's own on Windows (the build maps it) */
     unlocked_path(p, sizeof(p));
     FILE *f = fopen(p, "a");
     if (f) {

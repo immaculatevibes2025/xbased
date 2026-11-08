@@ -417,6 +417,123 @@ static void lower(char *s)
     }
 }
 
+/* A download's file name as a title: "project gotham racing 2 tu pal
+ * 4d53004b" as "Project Gotham Racing 2 Title Update (PAL)". The game's
+ * words capitalized (Roman numerals in capitals), its version ("v1.5" as
+ * 1.5) and language after them, "tu" as Title Update, the region last in
+ * brackets; the title ID dropped, or in brackets where no region is named. */
+static bool is_roman(const char *w)
+{
+    static const char *const r[] = {"ii", "iii", "iv", "vi", "vii", "viii", "ix", "xi", "xii", "xiii", NULL};
+    for (int i = 0; r[i]; i++) {
+        if (!SDL_strcasecmp(w, r[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool is_hex_id(const char *w)
+{
+    if (strlen(w) != 8) {
+        return false;
+    }
+    for (const char *c = w; *c; c++) {
+        if (!isxdigit((unsigned char)*c)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static void pretty_name(const char *file, char *out, size_t n)
+{
+    static const char *const langs[] = {"english", "korean", "japanese", "chinese", "french", "german", "italian",
+                                        "spanish", "dutch", "portuguese", "russian", "polish", "swedish", "norwegian",
+                                        "danish", "finnish", NULL};
+    char buf[300], game[300] = "", version[32] = "", lang[64] = "", kind[64] = "", region[16] = "", id[16] = "";
+    snprintf(buf, sizeof(buf), "%s", file);
+    for (char *c = buf; *c; c++) {
+        *c = *c == '_' ? ' ' : *c;
+    }
+    for (char *w = strtok(buf, " "); w; w = strtok(NULL, " ")) {
+        char lw[64];
+        snprintf(lw, sizeof(lw), "%s", w);
+        lower(lw);
+        /* "(pal)", "[ntsc]": the brackets off */
+        char *l = lw;
+        while (*l == '(' || *l == '[') {
+            l++;
+        }
+        for (size_t k = strlen(l); k && (l[k - 1] == ')' || l[k - 1] == ']'); k--) {
+            l[k - 1] = 0;
+        }
+        if (!strcmp(l, "pal") || !strcmp(l, "ntsc") || !strcmp(l, "ntsc-j") || !strcmp(l, "ntscj") ||
+            !strcmp(l, "ntsc-u")) {
+            snprintf(region, sizeof(region), "%s", !strcmp(l, "ntscj") ? "ntsc-j" : l);
+            continue;
+        }
+        if (is_hex_id(l) && strpbrk(l, "0123456789")) {
+            snprintf(id, sizeof(id), "%s", l);
+            continue;
+        }
+        if (!strcmp(l, "tu") || !strcmp(l, "update")) {
+            snprintf(kind, sizeof(kind), "Title Update");
+            continue;
+        }
+        if (!strcmp(l, "title") && !kind[0]) {
+            continue;       /* "title update" */
+        }
+        if (!strcmp(l, "dlc")) {
+            snprintf(kind, sizeof(kind), "DLC");
+            continue;
+        }
+        if (l[0] == 'v' && isdigit((unsigned char)l[1]) && strchr(l, '.')) {
+            snprintf(version, sizeof(version), "%s", l + 1);
+            continue;
+        }
+        bool is_lang = false;
+        for (int i = 0; langs[i]; i++) {
+            is_lang |= !strcmp(l, langs[i]);
+        }
+        if (is_lang) {
+            snprintf(lang, sizeof(lang), "%c%s", toupper((unsigned char)l[0]), l + 1);
+            continue;
+        }
+        if (isdigit((unsigned char)l[0]) && strchr(l, '.') && !game[0]) {
+            /* a version before any title word: part of the name */
+        } else if (isdigit((unsigned char)l[0]) && strchr(l, '.') && strlen(l) <= 5) {
+            snprintf(version, sizeof(version), "%s", l);
+            continue;
+        }
+        char word[64];
+        if (is_roman(l)) {
+            snprintf(word, sizeof(word), "%s", l);
+            for (char *c = word; *c; c++) {
+                *c = (char)toupper((unsigned char)*c);
+            }
+        } else {
+            snprintf(word, sizeof(word), "%c%s", toupper((unsigned char)l[0]), l + 1);
+        }
+        size_t g = strlen(game);
+        snprintf(game + g, sizeof(game) - g, "%s%s", g ? " " : "", word);
+    }
+    char tail[40] = "";
+    if (region[0]) {
+        for (char *c = region; *c; c++) {
+            *c = (char)toupper((unsigned char)*c);
+        }
+        snprintf(tail, sizeof(tail), " (%s)", region);
+    } else if (id[0]) {
+        for (char *c = id; *c; c++) {
+            *c = (char)toupper((unsigned char)*c);
+        }
+        snprintf(tail, sizeof(tail), " (%s)", id);
+    }
+    snprintf(out, n, "%s%s%s%s%s%s%s%s", game, version[0] ? " " : "", version, lang[0] ? " " : "", lang,
+             kind[0] ? " " : "", kind, tail);
+}
+
 /* the page's DLC zips for the title: named with its ID, or (none so) starting with its name */
 static void parse_page(const char *html)
 {
@@ -486,8 +603,11 @@ static void parse_page(const char *html)
         if (dup) {
             continue;
         }
+        if (strstr(low, "xbla")) {
+            continue;       /* Xbox Live Arcade updates: not a disc game's */
+        }
         Offer o;
-        snprintf(o.name, sizeof(o.name), "%s", file);
+        pretty_name(file, o.name, sizeof(o.name));
         snprintf(o.url, sizeof(o.url), "%s", url);
         if (strstr(low, tid) && W.noffers < MAX_ITEMS) {
             W.offers[W.noffers++] = o;

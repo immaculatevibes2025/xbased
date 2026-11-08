@@ -1,0 +1,50 @@
+name: Build Windows
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: xbased
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANG64
+          update: true
+          install: >-
+            git
+            mingw-w64-clang-x86_64-clang
+            mingw-w64-clang-x86_64-lld
+            mingw-w64-clang-x86_64-cmake
+            mingw-w64-clang-x86_64-ninja
+            mingw-w64-clang-x86_64-python
+
+      - name: Fetch dependencies
+        run: cd xbased && tools/fetch_deps.sh
+
+      - name: Configure
+        run: |
+          cmake -S xbased/native -B build/win -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+
+      - name: Build
+        run: cmake --build build/win --target hakux
+
+      - name: Collect
+        run: |
+          mkdir -p out
+          cp build/win/xbased.exe out/
+          for d in fonts mods cheats; do [ -d build/win/$d ] && cp -r build/win/$d out/ || true; done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: xbased-windows-x64
+          path: out

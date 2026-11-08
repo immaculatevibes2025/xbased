@@ -21,6 +21,7 @@ set(NC_APP_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/dash_settings.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/dash_memory.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/dash_content.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/dash_cheevos.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/dash_browse.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/dash_find.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/xemu_import.c"
@@ -46,4 +47,5 @@ target_compile_options(hakux PRIVATE -Wall -Wno-unused-parameter -Wno-unused-fun
 add_custom_command(TARGET hakux POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory "${NC_REPO}/mods" "$<TARGET_FILE_DIR:hakux>/mods"
   COMMAND ${CMAKE_COMMAND} -E copy_directory "${NC_REPO}/cheats" "$<TARGET_FILE_DIR:hakux>/cheats"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory "${NC_REPO}/achievements" "$<TARGET_FILE_DIR:hakux>/achievements"
   COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/fonts" "$<TARGET_FILE_DIR:hakux>/fonts")

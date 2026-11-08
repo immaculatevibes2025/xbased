@@ -2354,6 +2354,10 @@ static void scr_ingame(void)
         g_ig_thumbs_stale = true;
         dash_push(SCR_INGAME_SLOTS);
     }
+    if (list_row(&l, T(S_CHEEVOS), NULL, NULL)) {
+        D.sel[SCR_CHEEVOS] = 0;
+        dash_push(SCR_CHEEVOS);
+    }
     if (list_row(&l, T(S_GAME_SETTINGS), NULL, NULL)) {
         D.editing_game = true;
         D.sel[SCR_GAME_SETTINGS] = 0;
@@ -2471,6 +2475,7 @@ int dash_ingame(SDL_Window *win, const char *key, const char *title, const char 
     }
     D.stack[0] = SCR_INGAME;
     D.sel[SCR_INGAME] = 0;  /* on Resume each time, as a console's: no Quit by habit */
+    dash_cheevos_opened();
     g_auto_off = -1;
     /* the game's overlay (its presenter draws the menu over its picture),
      * or a renderer of this menu's own on the window */
@@ -2546,6 +2551,8 @@ int dash_ingame(SDL_Window *win, const char *key, const char *title, const char 
         switch (dash_top()) {
         case SCR_INGAME: scr_ingame(); break;
         case SCR_INGAME_SLOTS: scr_ingame_slots(); break;
+        case SCR_CHEEVOS: scr_cheevos(); break;
+        case SCR_MSEARCH: scr_msearch(); break;
         case SCR_GAME_SETTINGS: scr_game_settings(); break;
         case SCR_CONTROLS: scr_controls(); break;
         case SCR_REMAP: scr_remap(); break;
@@ -2554,6 +2561,7 @@ int dash_ingame(SDL_Window *win, const char *key, const char *title, const char 
         case SCR_SETTINGS: scr_settings(); break;
         default: dash_pop(); break;
         }
+        draw_toast();
         if (D.ask) {
             if (asked) {
                 D.in = saved;

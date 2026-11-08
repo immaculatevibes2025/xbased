@@ -103,6 +103,7 @@ add_library(hakux_native STATIC
   core/cheats.c
   core/xcheat.c
   core/memscan.c
+  core/cheevos.c
   core/core.c
   core/mmio.c
   core/irq.c
@@ -164,6 +165,21 @@ if(EXISTS "${NC_DEPS}/libchdr/CMakeLists.txt")
   target_compile_options(chdr-static PRIVATE -w)
   target_link_libraries(hakux_native PRIVATE chdr-static)
   target_compile_definitions(hakux_native PRIVATE NC_HAVE_CHD)
+endif()
+
+# rcheevos (NC_DEPS/rcheevos, MIT, unmodified): RetroAchievements' runtime,
+# the achievements of core/cheevos.c (local files; no server). Without it the
+# achievements are listed but never unlock.
+if(EXISTS "${NC_DEPS}/rcheevos/src/rcheevos/runtime.c")
+  file(GLOB NC_RCHEEVOS_SRC "${NC_DEPS}/rcheevos/src/rcheevos/*.c")
+  add_library(nc_rcheevos STATIC ${NC_RCHEEVOS_SRC} "${NC_DEPS}/rcheevos/src/rc_compat.c"
+    "${NC_DEPS}/rcheevos/src/rc_util.c" "${NC_DEPS}/rcheevos/src/rhash/md5.c")
+  target_include_directories(nc_rcheevos PUBLIC "${NC_DEPS}/rcheevos/include"
+    PRIVATE "${NC_DEPS}/rcheevos/src")
+  target_compile_definitions(nc_rcheevos PUBLIC RC_DISABLE_LUA RC_STATIC)
+  target_compile_options(nc_rcheevos PRIVATE -w)
+  target_link_libraries(hakux_native PRIVATE nc_rcheevos)
+  target_compile_definitions(hakux_native PRIVATE NC_HAVE_RCHEEVOS)
 endif()
 
 # xboxrun's custom Vulkan driver ("vkdriver="): the app's code for it

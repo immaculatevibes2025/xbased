@@ -31,7 +31,7 @@ typedef struct In {
 enum Screen {
     SCR_MAIN, SCR_GAMES, SCR_GAME, SCR_GAME_SETTINGS, SCR_MODS, SCR_STATES, SCR_SETTINGS, SCR_CONTROLS,
     SCR_REMAP, SCR_MEMORY, SCR_MEMORY_TITLE, SCR_ONLINE, SCR_ABOUT, SCR_INGAME, SCR_INGAME_SLOTS, SCR_STICKS,
-    SCR_TRIGGERS, SCR_BROWSE, SCR_FIND, SCR_CONTENT, SCR_COUNT
+    SCR_TRIGGERS, SCR_BROWSE, SCR_FIND, SCR_CONTENT, SCR_CHEEVOS, SCR_MSEARCH, SCR_COUNT
 };
 
 typedef struct Dash {
@@ -130,6 +130,9 @@ void scr_game_settings(void);
 void scr_mods(void);
 void scr_states(void);
 void scr_content(void);   /* title updates and DLC (dash_content.c) */
+void scr_cheevos(void);    /* achievements (dash_cheevos.c) */
+void scr_msearch(void);
+void dash_cheevos_opened(void);
 /* The Games screen's search, filters, order and view (dash_find.c):
  * dash_find_list fills out with the games they let through, in order;
  * dash_find_group is a game's group in that order (the triggers jump

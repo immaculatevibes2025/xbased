@@ -35,6 +35,7 @@ fetch spirv_reflect https://github.com/KhronosGroup/SPIRV-Reflect.git           
 fetch Vulkan-Headers https://github.com/KhronosGroup/Vulkan-Headers.git                       9a0f3099c8a9607a7c0f3127d8abfdc19a93e8c5
 fetch root/subprojects/nv2a_vsh_cpu https://github.com/xemu-project/nv2a_vsh_cpu.git         1115255708c10c4841b65dcd2223262e7a316598
 fetch libchdr       https://github.com/rtissera/libchdr.git                                  47d794151b2b64f6aba60304e6480f4f5a2bc24b
+fetch rcheevos      https://github.com/RetroAchievements/rcheevos.git                       1433173220a7eaede6a9ed7a18e94117be1821e0
 
 # Zydis' own dependency
 if [ ! -f "$DEPS/zydis/dependencies/zycore/CMakeLists.txt" ]; then

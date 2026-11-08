@@ -42,6 +42,7 @@
 #include "native/core/cheats.h"
 #include "native/core/core.h"
 #include "native/core/mods.h"
+#include "native/core/cheevos.h"
 #include "native/core/options.h"
 #include "native/dev/usb.h"
 #include "native/kernel/kernel.h"
@@ -445,6 +446,7 @@ static void *core_thread(void *arg)
 {
     nc_win_thread_name("vcpu");
     nc_win_thread_priority(1);
+    nc_cheevos_set_dirs(cfg_exe_dir(), g_data_dir);    /* achievements/ beside each */
     if (!nc_core_boot(&g_core, g_disc_fd)) {
         nc_log("hakuX-app", "core: boot failed");
         if (!nc_hle_fatal()) {
@@ -806,6 +808,13 @@ static void overlay_tick(void)
         } else {
             snprintf(t, sizeof(t), "%s", T(S_STATE_NOT_NOW));
         }
+        notice(t, NULL);
+    }
+    char unlocked[96];
+    if ((!g_notice[0] || g_notice_t0 == 0 || ui_time() - g_notice_t0 > 2.4) &&
+        nc_cheevos_take_unlock(unlocked, sizeof(unlocked))) {
+        char t[200];
+        snprintf(t, sizeof(t), T(S_CHEEVO_UNLOCKED), unlocked);
         notice(t, NULL);
     }
     if (g_notice_file[0] && GetFileAttributesA(g_notice_file) != INVALID_FILE_ATTRIBUTES) {

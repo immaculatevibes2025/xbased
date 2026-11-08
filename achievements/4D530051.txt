@@ -1,0 +1,34 @@
+# Conker: Live & Reloaded (4D530051): test achievements for the start of the
+# game. Their triggers are empty until their addresses are found with the
+# in-game menu's Memory search (docs/achievements.md walks through it);
+# fill one in and choose "Reload achievement file" to try it at once.
+#
+# Put your edited copy in the data folder's achievements\ (beside
+# xbased.ini) so an update of xbased doesn't replace it.
+
+[Gargoyle Smash]
+desc: Hit the gargoyle with the frying pan
+# A flag or counter that changes the moment the pan hits him. Search: 8-bit,
+# New search just before the hit, Changed right after, then Unchanged
+# while doing nothing. A flag going 0 to 1 then looks like:
+#   d0xH<address>=0_0xH<address>=1
+trigger:
+
+[Chocolate Fix]
+desc: Eat a chocolate to get health back
+# Health (chocolate): Decreased after taking a hit, Increased after eating
+# one. Unlocks when it goes up:
+#   0xH<address>>d0xH<address>
+trigger:
+
+[Lost Tail]
+desc: Lose a life
+# Lives (squirrel tails): Decreased after losing one. Unlocks when it goes down:
+#   0xH<address><d0xH<address>
+trigger:
+
+[First Wad]
+desc: Pick up your first wad of cash
+# Cash: Equal to 0 before any, Increased after picking some up.
+#   d0xH<address>=0_0xH<address>>0
+trigger:

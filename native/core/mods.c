@@ -2,6 +2,7 @@
  * hakuX native core — mods and cheats (mods.h).
  */
 #include "native/core/mods.h"
+#include "native/core/cheevos.h"
 
 #include "native/core/cheats.h"
 #include "native/core/memscan.h"
@@ -600,6 +601,16 @@ static bool mem_write(void *opaque, uint32_t va, const void *buf, unsigned n)
     return true;
 }
 
+static bool cheevo_read(uint32_t va, void *buf, unsigned n)
+{
+    return mem_read(NULL, va, buf, n);
+}
+
+NcVm *nc_mods_vm(void)
+{
+    return g_vm;
+}
+
 void nc_mods_bind(NcVm *vm, NcCpu *cpu, const HleXbeInfo *xbe)
 {
     g_vm = vm;
@@ -613,6 +624,7 @@ void nc_mods_bind(NcVm *vm, NcCpu *cpu, const HleXbeInfo *xbe)
             g_nexec++;
         }
     }
+    nc_cheevos_bind(xbe->title_id);
 }
 
 void nc_mods_poll(void)
@@ -626,6 +638,7 @@ void nc_mods_poll(void)
     }
     g_vblank = v;
     nc_memscan_poll(g_vm);              /* debug.hakux.memscan */
+    nc_cheevos_frame(cheevo_read);      /* achievements (cheevos.c) */
     if (!nc_cheat_count()) {
         return;
     }

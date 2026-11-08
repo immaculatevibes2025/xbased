@@ -39,6 +39,8 @@ void nc_mods_host_patch(const char *host, uint64_t off, void *buf, size_t len);
 void nc_mods_bind(NcVm *vm, struct NcCpu *cpu, const HleXbeInfo *xbe);
 /* The guest CPU's thread at each kernel exit: the cheats once a vblank. */
 void nc_mods_poll(void);
+/* The game's memory once bound (NULL before): the memory search (cheevos.c). */
+NcVm *nc_mods_vm(void);
 /* After a savestate loaded (its memory holds the code as it was saved, with
  * the mods on then: its MODS section): their patches taken back and the
  * running XBE's of the mods on now written. Where the header page gets other

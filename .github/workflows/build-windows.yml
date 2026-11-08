@@ -42,7 +42,7 @@ jobs:
         run: |
           mkdir -p out
           cp build/win/xbased.exe out/
-          for d in fonts mods cheats; do [ -d build/win/$d ] && cp -r build/win/$d out/ || true; done
+          for d in fonts mods cheats achievements; do [ -d build/win/$d ] && cp -r build/win/$d out/ || true; done
 
       - uses: actions/upload-artifact@v4
         with:

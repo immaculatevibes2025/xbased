@@ -214,9 +214,14 @@ void nc_cheevos_bind(uint32_t title_id)
     pthread_mutex_unlock(&g_lock);
 }
 
+/* at once (the in-game menu has the game paused: no frame would run it) */
 void nc_cheevos_reload(void)
 {
-    g_dirty = true;
+    pthread_mutex_lock(&g_lock);
+    if (g_title) {
+        load_all();
+    }
+    pthread_mutex_unlock(&g_lock);
 }
 
 void nc_cheevos_relock_all(void)
@@ -225,8 +230,10 @@ void nc_cheevos_relock_all(void)
     char p[1200];
     unlocked_path(p, sizeof(p));
     remove(p);
+    if (g_title) {
+        load_all();
+    }
     pthread_mutex_unlock(&g_lock);
-    g_dirty = true;
 }
 
 #ifdef NC_HAVE_RCHEEVOS

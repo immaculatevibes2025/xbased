@@ -22,6 +22,7 @@ set(NC_APP_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/dash_memory.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/dash_content.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/dash_cheevos.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/cheevo_art.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/dash_browse.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/dash_find.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/app/ui/xemu_import.c"

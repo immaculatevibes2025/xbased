@@ -1,10 +1,16 @@
 # Conker: Live & Reloaded (4D530051): test achievements for the start of the
 # game. Their triggers are empty until their addresses are found with the
-# in-game menu's Memory search (docs/achievements.md walks through it);
-# fill one in and choose "Reload achievement file" to try it at once.
+# in-game menu's Memory search, where "Make an achievement of it" writes them
+# without editing this file (docs/achievements.md walks through it).
 #
 # Put your edited copy in the data folder's achievements\ (beside
 # xbased.ini) so an update of xbased doesn't replace it.
+
+[Engine Test]
+desc: Play for 5 seconds (checks achievements work at all)
+points: 0
+# memory compared with itself: true every frame, so it unlocks after 300
+trigger: 0xH00000000=0xH00000000.300.
 
 [Gargoyle Smash]
 desc: Hit the gargoyle with the frying pan

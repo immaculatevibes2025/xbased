@@ -47,7 +47,7 @@ static void echo(float *o, int n, float delay, float g)
 
 static float *make(int which, int *frames)
 {
-    static const float k_len[SND_COUNT] = {0.16f, 0.42f, 0.30f, 0.20f, 0.36f, 1.1f};
+    static const float k_len[SND_COUNT] = {0.16f, 0.42f, 0.30f, 0.20f, 0.36f, 1.1f, 1.6f};
     const int n = (int)(k_len[which] * RATE);
     float *o = calloc((size_t)n * 2, sizeof(float));
     switch (which) {
@@ -93,6 +93,29 @@ static float *make(int which, int *frames)
         echo(o, n, 0.11f, 0.35f);
         break;
     }
+    case SND_CHEEVO: {
+        /* an achievement: a soft low "bwoom" swelling up into a bright,
+         * ringing two-note chime (xbased's own, in the spirit of a console's) */
+        uint32_t r = 777;
+        float lp = 0;
+        const int swell = (int)(0.22f * RATE);
+        for (int i = 0; i < swell; i++) {
+            const float k = (float)i / swell;
+            r = r * 1664525u + 1013904223u;
+            const float noise = ((r >> 9) / 4194304.0f - 1);
+            lp += (noise - lp) * (0.02f + 0.18f * k);
+            const float env = k * k * 0.18f;
+            o[i * 2] += lp * env;
+            o[i * 2 + 1] += lp * env;
+        }
+        tone(o, n, 0.00f, 150, 300, 0.20f, 9);      /* the body, rising */
+        tone(o, n, 0.18f, 523, 523, 0.10f, 4);      /* C5 under the chime */
+        tone(o, n, 0.20f, 1319, 1319, 0.12f, 3.2f); /* E6 */
+        tone(o, n, 0.30f, 1976, 1976, 0.10f, 2.8f); /* B6 */
+        tone(o, n, 0.30f, 2637, 2637, 0.03f, 4);    /* a glint over it */
+        echo(o, n, 0.13f, 0.38f);
+        break;
+    }
     }
     *frames = n;
     return o;
@@ -100,6 +123,9 @@ static float *make(int which, int *frames)
 
 void snd_init(void)
 {
+    if (S.st) {
+        return;     /* the in-game menu again, or the achievement sound first */
+    }
     if (!SDL_InitSubSystem(SDL_INIT_AUDIO)) {
         return;
     }

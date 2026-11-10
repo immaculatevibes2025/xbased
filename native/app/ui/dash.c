@@ -2553,6 +2553,10 @@ int dash_ingame(SDL_Window *win, const char *key, const char *title, const char 
         case SCR_INGAME_SLOTS: scr_ingame_slots(); break;
         case SCR_CHEEVOS: scr_cheevos(); break;
         case SCR_MSEARCH: scr_msearch(); break;
+        case SCR_CHEEVO_NEW: scr_cheevo_new(); break;
+        case SCR_WATCH: scr_watch(); break;
+        case SCR_TEXT: scr_text(); break;
+        case SCR_ADDR: scr_addr(); break;
         case SCR_GAME_SETTINGS: scr_game_settings(); break;
         case SCR_CONTROLS: scr_controls(); break;
         case SCR_REMAP: scr_remap(); break;

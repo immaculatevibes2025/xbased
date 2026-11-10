@@ -27,11 +27,13 @@
  * Android app passes its activity (loadstate=, relaunch).
  */
 #include "native/app/app.h"
+#include "native/app/ui/cheevo_art.h"
 #include "native/app/ui/config.h"
 #include "native/app/ui/console_cfg.h"
 #include "native/app/ui/dash.h"
 #include "native/app/ui/i18n.h"
 #include "native/app/ui/input_map.h"
+#include "native/app/ui/sound.h"
 #include "native/app/ui/ui.h"
 #include "hw/xbox/hle/vk/swapchain.h"
 #include "native/app/ui/xbox_data.h"
@@ -54,6 +56,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <dirent.h>
+#include <math.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -791,6 +794,97 @@ static void notice(const char *text, const char *after_file)
     g_notice_t0 = after_file ? 0 : ui_time();
 }
 
+/* ---- achievements over the game: the unlock pop-up and the watched addresses ---- */
+
+static int g_cheevo_corner = 3;     /* 0 top left, 1 top right, 2 bottom left, 3 bottom right */
+static bool g_cheevo_sound = true, g_watch_show = true;
+static double g_pop_t0;             /* the pop-up shown since (0: none) */
+static unsigned g_pop_i;            /* its achievement */
+#define POP_LEN 5.2
+
+/* the next unlock's pop-up, when the last one has gone; its sound */
+static void cheevo_poll(void)
+{
+    if (g_pop_t0 > 0 && ui_time() - g_pop_t0 < POP_LEN) {
+        return;
+    }
+    g_pop_t0 = 0;
+    unsigned i;
+    if (nc_cheevos_take_unlock(&i)) {
+        g_pop_i = i;
+        g_pop_t0 = ui_time();
+        if (g_cheevo_sound) {
+            snd_init();
+            snd_play(SND_CHEEVO);
+        }
+    }
+}
+
+static bool cheevo_pop_up(void)
+{
+    return g_pop_t0 > 0 && ui_time() - g_pop_t0 < POP_LEN;
+}
+
+/* RetroAchievements' memory reference, as the menu writes it */
+static void cheevo_ref(uint32_t a, unsigned size, char *out, size_t n)
+{
+    snprintf(out, n, size == 1 ? "0xH%08x" : size == 2 ? "0x %08x" : "0xX%08x", a);
+}
+
+static void draw_cheevo_pop(void)
+{
+    const float t = (float)(ui_time() - g_pop_t0);
+    const float in = t < 0.35f ? t / 0.35f : 1, out = t > POP_LEN - 0.5f ? (float)(POP_LEN - t) / 0.5f : 1;
+    const float e = 1 - (1 - in) * (1 - in) * (1 - in);    /* eased in */
+    const float pw = 470, ph = 104, m = 30, is = 80;
+    const bool right = g_cheevo_corner & 1, bottom = g_cheevo_corner & 2;
+    /* it slides in from its side of the screen */
+    float x = right ? ui_w() - m - pw : m;
+    const float y = bottom ? ui_h() - m - ph : m;
+    x += (right ? 1 : -1) * (1 - e) * (pw + m);
+    ui_set_alpha(out);
+    ui_round(x, y, pw, ph, ph / 2, (UiColor){0x08, 0x14, 0x05, 0xEC});
+    ui_round_outline(x, y, pw, ph, ph / 2, 2, ui_alpha(UI_GREEN, 0.85f));
+    ui_glow(x + 12 + is / 2, y + ph / 2, is * 0.62f, ui_alpha(UI_GREEN, 0.35f * (0.6f + 0.4f * sinf(t * 5))));
+    /* the achievement's picture: its badge, or the green X */
+    ui_image(cheevo_art(nc_cheevos_badge(g_pop_i)), x + 12, y + (ph - is) / 2, is, is, out);
+    const float tx = x + 12 + is + 16, tw = pw - (tx - x) - 36;
+    char head[160];
+    snprintf(head, sizeof(head), "%s  ·  %u", T(S_CHEEVO_HEADING), nc_cheevos_points(g_pop_i));
+    ui_text_fit(tx, y + 12, head, 17, UI_FONT_REGULAR, UI_GREEN, UI_ALIGN_LEFT, tw);
+    ui_text_fit(tx, y + 34, nc_cheevos_name(g_pop_i), 26, UI_FONT_BOLD, UI_WHITE, UI_ALIGN_LEFT, tw);
+    ui_text_fit(tx, y + 68, nc_cheevos_desc(g_pop_i), 16, UI_FONT_REGULAR, UI_GREY, UI_ALIGN_LEFT, tw);
+    ui_set_alpha(1);
+}
+
+static void draw_watches(void)
+{
+    const unsigned n = nc_watch_count();
+    const float lh = 24, w = 330, h = 14 + n * lh, m = 18;
+    /* the top corner the pop-up doesn't use */
+    const bool right = g_cheevo_corner == 0;
+    const float x = right ? ui_w() - m - w : m, y = m;
+    ui_round(x, y, w, h, 10, (UiColor){0x04, 0x0A, 0x03, 0xB8});
+    for (unsigned i = 0; i < n; i++) {
+        uint32_t a, v = 0;
+        unsigned sz;
+        if (!nc_watch_get(i, &a, &sz)) {
+            continue;
+        }
+        char ref[32], val[24];
+        cheevo_ref(a, sz, ref, sizeof(ref));
+        const char *note = nc_note_get(a);
+        if (nc_cheevos_peek(a, sz, &v)) {
+            snprintf(val, sizeof(val), "%u", v);
+        } else {
+            snprintf(val, sizeof(val), "-");
+        }
+        ui_text_fit(x + 12, y + 8 + i * lh, note[0] ? note : ref, 17, UI_FONT_REGULAR, UI_GREY, UI_ALIGN_LEFT,
+                    w - 110);
+        ui_text(x + w - 12, y + 8 + i * lh, val, 17, UI_FONT_BOLD, UI_GREEN, UI_ALIGN_RIGHT);
+    }
+}
+
 /* Each refresh of the window's loop, before it: the overlay it needs, if
  * any. Before the game's first frame, the picture the run before left (or
  * black); then that picture fading into the game's, or the game's rushing
@@ -810,13 +904,7 @@ static void overlay_tick(void)
         }
         notice(t, NULL);
     }
-    char unlocked[96];
-    if ((!g_notice[0] || g_notice_t0 == 0 || ui_time() - g_notice_t0 > 2.4) &&
-        nc_cheevos_take_unlock(unlocked, sizeof(unlocked))) {
-        char t[200];
-        snprintf(t, sizeof(t), T(S_CHEEVO_UNLOCKED), unlocked);
-        notice(t, NULL);
-    }
+    cheevo_poll();
     if (g_notice_file[0] && GetFileAttributesA(g_notice_file) != INVALID_FILE_ATTRIBUTES) {
         g_notice_file[0] = 0;   /* written: the notice now, not in the picture */
         g_notice_t0 = ui_time();
@@ -872,17 +960,31 @@ static void overlay_tick(void)
             }
         }
     }
-    if (g_notice[0] && g_notice_t0 > 0 && now - g_notice_t0 < 2.4) {
-        const float t = (float)(now - g_notice_t0);
-        const float a = t < 0.15f ? t / 0.15f : t > 2.0f ? (2.4f - t) / 0.4f : 1.0f;
+    const bool show_notice = g_notice[0] && g_notice_t0 > 0 && now - g_notice_t0 < 2.4;
+    const bool show_pop = cheevo_pop_up(), show_watch = g_watch_show && nc_watch_count() > 0;
+    if (show_notice || show_pop || show_watch) {
+        if (!show_notice && g_notice[0] && g_notice_t0 > 0) {
+            g_notice[0] = 0;
+        }
         ui_begin();
-        ui_set_alpha(a);
-        const float sz = 22, w = ui_text_width(g_notice, sz, UI_FONT_REGULAR) + 56;
-        const float x = (ui_w() - w) / 2, y = ui_h() - 96 + (1 - a) * 12;
-        ui_round(x, y, w, 46, 23, (UiColor){0x08, 0x16, 0x05, 0xE0});
-        ui_round_outline(x, y, w, 46, 23, 1.5f, ui_alpha(UI_GREEN, 0.7f));
-        ui_glow(x + 24, y + 23, 14, ui_alpha(UI_GREEN, 0.8f));
-        ui_text(x + 40, y + 10, g_notice, sz, UI_FONT_REGULAR, UI_WHITE, UI_ALIGN_LEFT);
+        if (show_watch) {
+            draw_watches();
+        }
+        if (show_pop) {
+            draw_cheevo_pop();
+        }
+        if (show_notice) {
+            const float t = (float)(now - g_notice_t0);
+            const float a = t < 0.15f ? t / 0.15f : t > 2.0f ? (2.4f - t) / 0.4f : 1.0f;
+            ui_set_alpha(a);
+            const float sz = 22, w = ui_text_width(g_notice, sz, UI_FONT_REGULAR) + 56;
+            const float x = (ui_w() - w) / 2, y = ui_h() - 96 + (1 - a) * 12;
+            ui_round(x, y, w, 46, 23, (UiColor){0x08, 0x16, 0x05, 0xE0});
+            ui_round_outline(x, y, w, 46, 23, 1.5f, ui_alpha(UI_GREEN, 0.7f));
+            ui_glow(x + 24, y + 23, 14, ui_alpha(UI_GREEN, 0.8f));
+            ui_text(x + 40, y + 10, g_notice, sz, UI_FONT_REGULAR, UI_WHITE, UI_ALIGN_LEFT);
+            ui_set_alpha(1);
+        }
         ui_overlay_submit(false);
         g_ov_up = true;
         return;
@@ -938,6 +1040,9 @@ static void apply_cfg(const Config *global, const Config *game, bool sound)
         }
     }
     g_fx = cfg_bool(global, "ui.fx", true);
+    g_cheevo_corner = cfg_int(global, "cheevos.popup", 3) & 3;
+    g_cheevo_sound = cfg_bool(global, "cheevos.sound", true);
+    g_watch_show = cfg_bool(global, "cheevos.watch", true);
 }
 
 /* the menu's settings as they are being changed: the picture under it */

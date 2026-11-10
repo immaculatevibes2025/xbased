@@ -359,8 +359,9 @@ static int wide_of(int kx)
     return kx >= 7 ? 2 : kx >= 4 ? 1 : 0;
 }
 
-/* the keyboard at (x, y), keys of ks; the input was the screen's */
-static void osk(float x, float y, float ks, const In *in)
+/* the keyboard at (x, y), keys of ks, typing into buf; the input was the
+ * screen's; true when Done is pressed */
+bool dash_osk(char *buf, size_t cap, float x, float y, float ks, const In *in)
 {
     const float gap = 6;
     if (in->left) {
@@ -408,14 +409,32 @@ static void osk(float x, float y, float ks, const In *in)
     }
     if (pressed >= 0 && pressed < 40) {
         const char s[2] = {k_rows[pressed / 10][pressed % 10], 0};
-        type(s);
+        dash_text_add(buf, cap, s);
     } else if (pressed == 40) {
-        type(" ");
+        dash_text_add(buf, cap, " ");
     } else if (pressed == 41) {
-        rub_out();
-    } else if (pressed == 42) {
-        edit(false);
+        dash_text_rub(buf);
     }
+    return pressed == 42;
+}
+
+void dash_text_add(char *buf, size_t cap, const char *s)
+{
+    if (strlen(buf) + strlen(s) < cap) {
+        strcat(buf, s);
+    }
+}
+
+void dash_text_rub(char *buf)
+{
+    size_t n = strlen(buf);
+    if (!n) {
+        return;
+    }
+    do {
+        n--;    /* a whole UTF-8 character */
+    } while (n > 0 && ((unsigned char)buf[n] & 0xC0) == 0x80);
+    buf[n] = 0;
 }
 
 void dash_find_open(bool typing)
@@ -552,7 +571,9 @@ void scr_find(void)
             in.mx = in.my = -1;
             in.pad = D.in.pad;
         }
-        osk(kx, ly, ks, &in);
+        if (dash_osk(F.q, sizeof(F.q), kx, ly, ks, &in)) {
+            edit(false);
+        }
         float y = ly + 5 * (ks + 6) + 18;
         for (int i = 0; i < n && i < 4 && y < H - 130; i++, y += 30) {
             ui_text_fit(kx, y, res[i]->g.title, 22, UI_FONT_REGULAR, i ? UI_GREY : UI_WHITE, UI_ALIGN_LEFT,

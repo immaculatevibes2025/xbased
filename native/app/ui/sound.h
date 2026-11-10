@@ -7,7 +7,7 @@
 
 #include <stdbool.h>
 
-enum { SND_MOVE, SND_SELECT, SND_BACK, SND_TAB, SND_ERROR, SND_LAUNCH, SND_COUNT };
+enum { SND_MOVE, SND_SELECT, SND_BACK, SND_TAB, SND_ERROR, SND_LAUNCH, SND_CHEEVO, SND_COUNT };
 
 void snd_init(void);
 void snd_enable(bool on);

@@ -19,7 +19,7 @@ enum {
     IM_LUP, IM_LDOWN, IM_LLEFT, IM_LRIGHT, IM_RUP, IM_RDOWN, IM_RLEFT, IM_RRIGHT,
     IM_INPUTS
 };
-enum { IM_HK_MENU, IM_HK_SAVE, IM_HK_LOAD, IM_HK_TURBO, IM_HK_PAUSE, IM_HK_SHOT, IM_HK_FULL, IM_HOTKEYS };
+enum { IM_HK_MENU, IM_HK_SAVE, IM_HK_LOAD, IM_HK_TURBO, IM_HK_PAUSE, IM_HK_SHOT, IM_HK_FULL, IM_HK_SNAP, IM_HOTKEYS };
 
 /* The Duke's state, as the core's NcPadState (usb.h) holds it. */
 typedef struct ImPad {

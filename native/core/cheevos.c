@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <time.h>
 
 #ifdef NC_HAVE_RCHEEVOS
 #include "rc_runtime.h"
@@ -431,6 +432,71 @@ bool nc_cheevos_peek(uint32_t address, unsigned size, uint32_t *value)
     return true;
 }
 
+/* ------------------------------------------------------------ snapshots */
+
+static volatile int g_snap_req, g_snap_done;
+static unsigned g_frame;
+
+void nc_snapshot_request(void)
+{
+    g_snap_req = 1;
+}
+
+int nc_snapshot_take_done(void)
+{
+    const int d = g_snap_done;
+    g_snap_done = 0;
+    return d;
+}
+
+static bool write_file(const char *path, const void *data, size_t n)
+{
+    FILE *f = fopen(path, "wb");
+    if (!f) {
+        return false;
+    }
+    const bool ok = fwrite(data, 1, n, f) == n;
+    return fclose(f) == 0 && ok;
+}
+
+/* the guest stopped: RAM, its page map and a note, numbered after the last */
+static void take_snapshot(void)
+{
+    NcVm *vm = nc_mods_vm();
+    if (!vm || !g_title) {
+        g_snap_done = -1;
+        return;
+    }
+    char dir[1200], p[1300];
+    make_dir();
+    snprintf(dir, sizeof(dir), "%sachievements/snapshots", g_data_dir);
+    mkdir(dir, 0775);
+    int n = 1;
+    for (;; n++) {
+        snprintf(p, sizeof(p), "%s/%08X-%d.ram", dir, g_title, n);
+        FILE *f = fopen(p, "rb");
+        if (!f) {
+            break;
+        }
+        fclose(f);
+    }
+    bool ok = write_file(p, vm->phys, vm->ram_size);
+    snprintf(p, sizeof(p), "%s/%08X-%d.map", dir, g_title, n);
+    ok = ok && write_file(p, vm->rmap, (vm->ram_size / NC_PAGE) * sizeof(uint32_t));
+    snprintf(p, sizeof(p), "%s/%08X-%d.txt", dir, g_title, n);
+    FILE *f = fopen(p, "w");
+    if (f) {
+        time_t t = time(NULL);
+        char when[64];
+        strftime(when, sizeof(when), "%Y-%m-%d %H:%M:%S", localtime(&t));
+        fprintf(f, "title %08X\nsnapshot %d\ntaken %s\nframe %u\nram %u\n", g_title, n, when, g_frame,
+                vm->ram_size);
+        fclose(f);
+    }
+    nc_log(TAG, "snapshot %d: %s", n, ok ? "written" : "failed");
+    g_snap_done = ok ? n : -1;
+}
+
 /* ------------------------------------------------------------ the runtime */
 
 static void load_all(void)
@@ -622,6 +688,11 @@ static void RC_CCONV on_event(const rc_runtime_event_t *e)
 void nc_cheevos_frame(NcCheevosRead read)
 {
     g_read = read;
+    g_frame++;
+    if (g_snap_req) {
+        g_snap_req = 0;
+        take_snapshot();
+    }
     pthread_mutex_lock(&g_lock);
 #ifdef NC_HAVE_RCHEEVOS
     if (g_rt_up && g_n) {

@@ -38,6 +38,26 @@ then load and do it again (**Lock all again** relocks everything).
 The Achievements screen also sets where the pop-up shows (any corner),
 whether it plays its sound, and whether watched addresses show over the game.
 
+## Memory snapshots
+
+Press **F9** in a game (a hotkey to change in the controls' settings, or
+**Take a memory snapshot** in the Achievements menu) to save all of RAM,
+numbered, in `achievements/snapshots`: `<TITLE ID>-<n>.ram`, its page map
+`.map`, and when it was taken `.txt`. Take a few at moments you can name
+("3 tails", "2 tails"), restart the game and take a few more. Each is 64 MB.
+
+`tools/snapscan.py` works through them away from the game:
+
+```
+python tools/snapscan.py values   <folder> 4D530051 1=3 2=2 3=3 4=2
+python tools/snapscan.py pointers <folder> 4D530051 1=0x03bb1f20 3=0x02a81f20
+```
+
+`values` finds the addresses that held each value in each snapshot;
+`pointers` takes where the value was in snapshots from different runs of the
+game and finds a pointer that leads to it in all of them, printed as the
+trigger's `I:` part.
+
 ## Files
 
 All in an `achievements` folder: beside `xbased.exe` for the ones that ship,
@@ -51,6 +71,7 @@ and in the data folder (the same folder when xbased can write there) for yours.
 | `<TITLE ID>.notes` | address notes: `0x03bb1f20 Conker tails` |
 | `<TITLE ID>.watch` | watched addresses: `0x03bb1f20 1` (the size in bytes) |
 | `found.txt` | nothing now; earlier versions kept search results here |
+| `snapshots/` | memory snapshots (F9) |
 | `badges/<badge>.png` | an achievement's picture (64x64 as RetroAchievements', any size works); a green X until it has one |
 
 ```

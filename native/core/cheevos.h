@@ -70,6 +70,16 @@ bool nc_cheevos_export(const char *game_title, char *out, size_t n);
 /* A value now: size 1, 2 or 4 bytes at a RetroAchievements address. */
 bool nc_cheevos_peek(uint32_t address, unsigned size, uint32_t *value);
 
+/* ---- memory snapshots (worked through away from the game) ----
+ * <data dir>/achievements/snapshots/<TITLE ID>-<n>.ram: all of RAM, as
+ * RetroAchievements addresses it; .map beside it: for each 4 KB page the
+ * game's other (virtual) address of it, 32-bit little-endian, 0 for none
+ * (its 0x80000000 window aside); .txt: when, and the frame. */
+/* One taken at the next frame (any thread). */
+void nc_snapshot_request(void);
+/* Its number once written (0 not yet, -1 failed): any thread, once. */
+int nc_snapshot_take_done(void);
+
 /* ---- address notes ---- */
 const char *nc_note_get(uint32_t address);         /* "" none */
 void nc_note_set(uint32_t address, const char *text);  /* "" removes */

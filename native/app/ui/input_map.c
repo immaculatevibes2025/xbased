@@ -32,10 +32,10 @@ static const int k_pad_def[IM_INPUTS] = {
     AX(SDL_GAMEPAD_AXIS_LEFTY, 1), AX(SDL_GAMEPAD_AXIS_LEFTY, 0), AX(SDL_GAMEPAD_AXIS_LEFTX, 1),
     AX(SDL_GAMEPAD_AXIS_LEFTX, 0), AX(SDL_GAMEPAD_AXIS_RIGHTY, 1), AX(SDL_GAMEPAD_AXIS_RIGHTY, 0),
     AX(SDL_GAMEPAD_AXIS_RIGHTX, 1), AX(SDL_GAMEPAD_AXIS_RIGHTX, 0)};
-static const char *const k_hk_name[IM_HOTKEYS] = {"menu", "save", "load", "turbo", "pause", "shot", "full"};
-static const SDL_Keycode k_hk_def[IM_HOTKEYS] = {SDLK_F1, SDLK_F5, SDLK_F8, SDLK_TAB, SDLK_F2, SDLK_F12, SDLK_F11};
+static const char *const k_hk_name[IM_HOTKEYS] = {"menu", "save", "load", "turbo", "pause", "shot", "full", "snapshot"};
+static const SDL_Keycode k_hk_def[IM_HOTKEYS] = {SDLK_F1, SDLK_F5, SDLK_F8, SDLK_TAB, SDLK_F2, SDLK_F12, SDLK_F11, SDLK_F9};
 static const enum UiStr k_hk_label[IM_HOTKEYS] = {S_HK_MENU, S_HK_SAVE, S_HK_LOAD, S_HK_TURBO,
-                                                  S_HK_PAUSE, S_HK_SHOT, S_HK_FULL};
+                                                  S_HK_PAUSE, S_HK_SHOT, S_HK_FULL, S_HK_SNAP};
 
 const char *im_input_label(int i)
 {

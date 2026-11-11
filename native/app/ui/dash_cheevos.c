@@ -162,6 +162,10 @@ void scr_cheevos(void)
         cfg_set_int(&D.global, "cheevos.popup", (corner + (d ? d : 1) + 4) % 4);
         dash_save_cfg();
     }
+    if (list_row(&l, T(S_SNAP_MENU), NULL, NULL)) {
+        nc_snapshot_request();      /* taken as the game runs again */
+        dash_toast(T(S_SNAP_ON_RESUME));
+    }
     toggle_row(&l, T(S_CHEEVO_SOUND), "cheevos.sound", true);
     toggle_row(&l, T(S_CHEEVO_SHOW_WATCH), "cheevos.watch", true);
     if (list_row(&l, T(S_CHEEVOS_RELOAD), NULL, NULL)) {

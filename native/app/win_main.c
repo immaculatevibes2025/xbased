@@ -905,6 +905,16 @@ static void overlay_tick(void)
         notice(t, NULL);
     }
     cheevo_poll();
+    const int snap = nc_snapshot_take_done();
+    if (snap) {
+        char t[120];
+        if (snap > 0) {
+            snprintf(t, sizeof(t), T(S_SNAP_TAKEN), snap);
+        } else {
+            snprintf(t, sizeof(t), "%s", T(S_SNAP_FAILED));
+        }
+        notice(t, NULL);
+    }
     if (g_notice_file[0] && GetFileAttributesA(g_notice_file) != INVALID_FILE_ATTRIBUTES) {
         g_notice_file[0] = 0;   /* written: the notice now, not in the picture */
         g_notice_t0 = ui_time();
@@ -1612,6 +1622,8 @@ int main(int argc, char *argv[])
                     nc_win_prop_set("debug.hakux.fpscap", "0");
                 } else if (ev.key.key == g_map.hotkey[IM_HK_SHOT]) {
                     screenshot();
+                } else if (ev.key.key == g_map.hotkey[IM_HK_SNAP]) {
+                    nc_snapshot_request();
                 } else if (ev.key.key == g_map.hotkey[IM_HK_MENU]) {
                     ingame_menu(win, &paused, minimized);
                 }

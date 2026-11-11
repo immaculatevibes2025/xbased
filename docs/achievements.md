@@ -65,7 +65,8 @@ and in the data folder (the same folder when xbased can write there) for yours.
 
 | File | What |
 |---|---|
-| `<TITLE ID>.txt` | achievements in xbased's format (below); yours replace shipped ones of the same name |
+| `<TITLE ID>.txt` | achievements in xbased's format (below), as xbased ships them; an update replaces it |
+| `<TITLE ID>.mine.txt` | yours, in the same format: **Make an achievement of it** writes here, and an update never touches it. One of the same name as a shipped one replaces it |
 | `<TITLE ID>-User.txt` | RetroAchievements' local format (their toolkit's): read too; **Save in RetroAchievements' format** writes it |
 | `<TITLE ID>.unlocked` | what you've unlocked, a name a line |
 | `<TITLE ID>.notes` | address notes: `0x03bb1f20 Conker tails` |

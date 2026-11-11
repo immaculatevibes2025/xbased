@@ -3,8 +3,8 @@
 # in-game menu's Memory search, where "Make an achievement of it" writes them
 # without editing this file (docs/achievements.md walks through it).
 #
-# Put your edited copy in the data folder's achievements\ (beside
-# xbased.ini) so an update of xbased doesn't replace it.
+# Don't edit this file: an update of xbased replaces it. Put your own in
+# 4D530051.mine.txt beside it (the same [name] replaces one here).
 
 [Engine Test]
 desc: Play for 5 seconds (checks achievements work at all)

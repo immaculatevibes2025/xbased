@@ -10,8 +10,10 @@
  * xbased's first achievement files among them.
  *
  *   <exe dir>/achievements/<TITLE ID>.txt        shipped
- *   <data dir>/achievements/<TITLE ID>.txt       the player's own, read after
- *                                                (the same name replaces)
+ *   <data dir>/achievements/<TITLE ID>.txt       read after (the same name replaces)
+ *   <data dir>/achievements/<TITLE ID>.mine.txt  the player's own, read after
+ *                                                those: made in the menu, and
+ *                                                never in a download
  *   <data dir>/achievements/<TITLE ID>-User.txt  RetroAchievements' local
  *                                                format (their toolkit's), read
  *                                                too; written by the export

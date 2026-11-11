@@ -509,6 +509,10 @@ static void load_all(void)
         snprintf(p, sizeof(p), "%sachievements/%08X.txt", g_data_dir, g_title);
         read_defs(p);
     }
+    /* the player's own: a name xbased's downloads never carry, so unzipping
+     * an update over a portable folder can't replace it */
+    data_path(".mine.txt", p, sizeof(p));
+    read_defs(p);
     data_path("-User.txt", p, sizeof(p));
     read_ra(p);
 #ifdef NC_HAVE_RCHEEVOS
@@ -600,7 +604,7 @@ bool nc_cheevos_add(const char *name, const char *desc, const char *trigger, uns
 #endif
     make_dir();
     char p[1200];
-    snprintf(p, sizeof(p), "%sachievements/%08X.txt", g_data_dir, g_title);
+    data_path(".mine.txt", p, sizeof(p));
     FILE *f = fopen(p, "a");
     if (!f) {
         snprintf(err, en, "%s couldn't be written", p);

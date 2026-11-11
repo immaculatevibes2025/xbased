@@ -10,6 +10,29 @@ the same trigger strings, their Xbox addresses (physical RAM, their console
 Unlocks pop up over the game with a sound; the in-game menu's
 **Achievements** lists them and holds the tools below.
 
+## Turning them on
+
+Achievements are off until `xbased.ini` (beside `xbased.exe`, or in the data
+folder) says so; xbased writes both lines, off, the first time it starts:
+
+```
+achievements=1           # achievements run, and show in the menus
+achievements.testing=1   # the tools for making them (below)
+```
+
+With `achievements=1`, **Settings** gets an **Achievements** tab: a
+RetroAchievements account (a place for it: they don't take Original Xbox
+yet, so nothing is sent and the password isn't kept), **Hardcore mode** (no
+loading states, cheats or fast forward), **Encore mode** (unlocked ones can
+unlock again), unlock notifications, their corner and sound, a .jpg
+screenshot (in `screenshots`) at each unlock, and RetroAchievements'
+leaderboard and rich presence settings, kept for when there's something for
+them to do. The in-game menu gets **Achievements**: the list, and **Lock all
+again**.
+
+`achievements.testing=1` adds the memory search, watched addresses, memory
+snapshots (F9), reloading the files and saving in RetroAchievements' format.
+
 ## Making an achievement without writing anything
 
 In-game menu → **Achievements** → **Memory search**. The game is paused while

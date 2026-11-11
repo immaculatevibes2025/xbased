@@ -10,5 +10,8 @@
 
 UiTex *cheevo_art(const char *badge);    /* never NULL once the UI is up */
 void cheevo_art_free(void);
+/* A screenshot's BMP (hle_present_shot) as a JPG, the BMP then removed:
+ * 1 done, 0 not written whole yet, -1 failed. */
+int cheevo_bmp_to_jpg(const char *bmp, const char *jpg);
 
 #endif

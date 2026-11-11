@@ -12,7 +12,11 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_STATIC
 #define STBI_ONLY_PNG
+#define STBI_ONLY_BMP
 #include "stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_STATIC
+#include "stb_image_write.h"
 
 #define SIDE 128
 #define CACHE 32
@@ -131,4 +135,28 @@ void cheevo_art_free(void)
         ui_texture_free(g_x);
         g_x = NULL;
     }
+}
+
+int cheevo_bmp_to_jpg(const char *bmp, const char *jpg)
+{
+    size_t n = 0;
+    uint8_t *file = SDL_LoadFile(bmp, &n);
+    if (!file) {
+        return 0;
+    }
+    /* whole yet? (the window writes it at its next refresh) */
+    const uint32_t want = n >= 6 ? (uint32_t)file[2] | (uint32_t)file[3] << 8 | (uint32_t)file[4] << 16 |
+                                       (uint32_t)file[5] << 24
+                                 : 0;
+    if (n < 54 || n < want) {
+        SDL_free(file);
+        return 0;
+    }
+    int w = 0, h = 0, comp = 0;
+    stbi_uc *px = stbi_load_from_memory(file, (int)n, &w, &h, &comp, 3);
+    SDL_free(file);
+    const int ok = px && stbi_write_jpg(jpg, w, h, 3, px, 90);
+    stbi_image_free(px);
+    SDL_RemovePath(bmp);
+    return ok ? 1 : -1;
 }

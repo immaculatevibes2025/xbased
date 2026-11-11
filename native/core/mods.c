@@ -639,8 +639,8 @@ void nc_mods_poll(void)
     g_vblank = v;
     nc_memscan_poll(g_vm);              /* debug.hakux.memscan */
     nc_cheevos_frame(cheevo_read);      /* achievements (cheevos.c) */
-    if (!nc_cheat_count()) {
-        return;
+    if (!nc_cheat_count() || nc_cheevos_hardcore()) {
+        return;     /* none, or hardcore achievements (no cheats) */
     }
     static const NcCheatMem mem = {NULL, mem_read, mem_write};
     nc_cheats_run(&mem);

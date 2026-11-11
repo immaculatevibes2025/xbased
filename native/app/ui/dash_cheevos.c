@@ -103,6 +103,34 @@ void scr_text(void)
     }
 }
 
+/* ------------------------------------------------------------ xbased.ini's switches */
+
+bool dash_cheevos_on(void)
+{
+    return cfg_bool(&D.global, "achievements", false);
+}
+
+bool dash_cheevos_testing(void)
+{
+    return dash_cheevos_on() && cfg_bool(&D.global, "achievements.testing", false);
+}
+
+void dash_cheevos_ini_defaults(void)
+{
+    bool added = false;
+    if (!cfg_get(&D.global, "achievements")) {
+        cfg_set_bool(&D.global, "achievements", false);
+        added = true;
+    }
+    if (!cfg_get(&D.global, "achievements.testing")) {
+        cfg_set_bool(&D.global, "achievements.testing", false);
+        added = true;
+    }
+    if (added) {
+        cfg_save(&D.global);
+    }
+}
+
 /* ------------------------------------------------------------ settings and the list */
 
 static const char *corner_name(int c)
@@ -128,6 +156,72 @@ static bool toggle_row(List *l, const char *label, const char *key, bool def)
     return false;
 }
 
+/* the settings' Achievements tab: RetroAchievements' account (a place for
+ * it: Original Xbox isn't on their site yet) and their usual settings */
+void dash_cheevos_settings_rows(List *l)
+{
+    const char *user = cfg_get(&D.global, "ra.user");
+    if (list_row(l, T(S_RA_ACCOUNT), user && *user ? user : T(S_RA_NOT_LOGGED_IN), NULL)) {
+        D.sel[SCR_RA_LOGIN] = 0;
+        dash_push(SCR_RA_LOGIN);
+    }
+    toggle_row(l, T(S_RA_HARDCORE), "cheevos.hardcore", false);
+    toggle_row(l, T(S_RA_ENCORE), "cheevos.encore", false);
+    toggle_row(l, T(S_RA_NOTIFY), "cheevos.notify", true);
+    int d = 0;
+    const int corner = cfg_int(&D.global, "cheevos.popup", 3) & 3;
+    if (list_row(l, T(S_CHEEVO_POPUP), corner_name(corner), &d) || d) {
+        cfg_set_int(&D.global, "cheevos.popup", (corner + (d ? d : 1) + 4) % 4);
+        dash_save_cfg();
+    }
+    toggle_row(l, T(S_CHEEVO_SOUND), "cheevos.sound", true);
+    toggle_row(l, T(S_RA_SCREENSHOT), "cheevos.screenshot", false);
+    /* RetroAchievements' others, kept until there's something for them to do */
+    toggle_row(l, T(S_RA_LEADERBOARDS), "cheevos.leaderboards", true);
+    toggle_row(l, T(S_RA_RICH_PRESENCE), "cheevos.richpresence", true);
+    list_row(l, T(S_RA_NOTE), NULL, NULL);
+}
+
+static char g_ra_user[64], g_ra_pass[64];
+
+void scr_ra_login(void)
+{
+    const float W = ui_w(), H = ui_h();
+    draw_header(T(S_RA_ACCOUNT), "RetroAchievements");
+    if (!g_ra_user[0]) {
+        const char *u = cfg_get(&D.global, "ra.user");
+        snprintf(g_ra_user, sizeof(g_ra_user), "%s", u ? u : "");
+    }
+    List l;
+    list_begin(&l, 74, 150, W - 148, H - 244, 58);
+    if (list_row(&l, T(S_RA_USER), g_ra_user, NULL)) {
+        text_edit(T(S_RA_USER), g_ra_user, sizeof(g_ra_user), NULL);
+    }
+    char dots[64];
+    size_t k = 0;
+    for (; g_ra_pass[k] && k + 1 < sizeof(dots); k++) {
+        dots[k] = '*';
+    }
+    dots[k] = 0;
+    if (list_row(&l, T(S_RA_PASSWORD), dots, NULL)) {
+        text_edit(T(S_RA_PASSWORD), g_ra_pass, sizeof(g_ra_pass), NULL);
+    }
+    if (list_row(&l, T(S_RA_LOGIN), NULL, NULL)) {
+        /* nowhere to send it yet: the name kept, the password forgotten */
+        cfg_set(&D.global, "ra.user", g_ra_user);
+        dash_save_cfg();
+        memset(g_ra_pass, 0, sizeof(g_ra_pass));
+        dash_toast(T(S_RA_NOT_YET));
+    }
+    list_end(&l);
+    ui_text(74, H - 82, T(S_RA_NOTE), 18, UI_FONT_REGULAR, UI_GREY, UI_ALIGN_LEFT);
+    if (D.in.back) {
+        memset(g_ra_pass, 0, sizeof(g_ra_pass));
+        dash_pop();
+    }
+    draw_hints(T(S_SELECT), T(S_BACK), NULL, NULL);
+}
+
 void scr_cheevos(void)
 {
     const float W = ui_w(), H = ui_h();
@@ -146,13 +240,14 @@ void scr_cheevos(void)
     draw_header(T(S_CHEEVOS), sub2);
     List l;
     list_begin(&l, 74, 150, W - 148, H - 244, 64);
-    if (list_row(&l, T(S_MSEARCH), NULL, NULL)) {
+    const bool testing = dash_cheevos_testing();     /* achievements.testing=1 in xbased.ini */
+    if (testing && list_row(&l, T(S_MSEARCH), NULL, NULL)) {
         D.sel[SCR_MSEARCH] = 0;
         dash_push(SCR_MSEARCH);
     }
     char nw[16];
     snprintf(nw, sizeof(nw), "%u", nc_watch_count());
-    if (list_row(&l, T(S_WATCHED), nw, NULL)) {
+    if (testing && list_row(&l, T(S_WATCHED), nw, NULL)) {
         D.sel[SCR_WATCH] = 0;
         dash_push(SCR_WATCH);
     }
@@ -162,13 +257,15 @@ void scr_cheevos(void)
         cfg_set_int(&D.global, "cheevos.popup", (corner + (d ? d : 1) + 4) % 4);
         dash_save_cfg();
     }
-    if (list_row(&l, T(S_SNAP_MENU), NULL, NULL)) {
+    if (testing && list_row(&l, T(S_SNAP_MENU), NULL, NULL)) {
         nc_snapshot_request();      /* taken as the game runs again */
         dash_toast(T(S_SNAP_ON_RESUME));
     }
     toggle_row(&l, T(S_CHEEVO_SOUND), "cheevos.sound", true);
-    toggle_row(&l, T(S_CHEEVO_SHOW_WATCH), "cheevos.watch", true);
-    if (list_row(&l, T(S_CHEEVOS_RELOAD), NULL, NULL)) {
+    if (testing) {
+        toggle_row(&l, T(S_CHEEVO_SHOW_WATCH), "cheevos.watch", true);
+    }
+    if (testing && list_row(&l, T(S_CHEEVOS_RELOAD), NULL, NULL)) {
         nc_cheevos_reload();
         dash_toast(T(S_CHEEVOS_RELOADED));
     }
@@ -185,7 +282,7 @@ void scr_cheevos(void)
                  nc_cheevos_points(i));
         list_row_icon(&l, cheevo_art(nc_cheevos_badge(i)), nc_cheevos_name(i), sub_line, value, NULL);
     }
-    if (n && list_row(&l, T(S_CHEEVO_EXPORT), NULL, NULL)) {
+    if (testing && n && list_row(&l, T(S_CHEEVO_EXPORT), NULL, NULL)) {
         char path[1300], msg[1400];
         if (nc_cheevos_export(D.cur ? D.cur->g.title : "", path, sizeof(path))) {
             snprintf(msg, sizeof(msg), T(S_CHEEVO_EXPORTED), path);

@@ -194,9 +194,13 @@ void scr_settings(void)
 {
     const float W = ui_w(), H = ui_h();
     draw_header(T(S_SETTINGS), NULL);
-    static const enum UiStr tabs[] = {S_VIDEO, S_AUDIO, S_SYSTEM, S_INTERFACE, S_CONTROLS, S_HOTKEYS};
+    static const enum UiStr tabs[] = {S_VIDEO, S_AUDIO, S_SYSTEM, S_INTERFACE, S_CONTROLS, S_HOTKEYS, S_CHEEVOS};
     D.editing_game = false;
-    tab_bar(tabs, 6);
+    const int ntabs = dash_cheevos_on() ? 7 : 6;    /* Achievements: achievements=1 in xbased.ini */
+    if (D.tab >= ntabs) {
+        D.tab = 0;
+    }
+    tab_bar(tabs, ntabs);
     List l;
     list_begin(&l, 74, 196, W - 148, H - 290, 58);
     (void)video_mode_name;
@@ -339,6 +343,9 @@ void scr_settings(void)
         break;
     case 5:
         for (int h = 0; h < IM_HOTKEYS; h++) {
+            if (h == IM_HK_SNAP && !dash_cheevos_testing()) {
+                continue;   /* the memory snapshot: an achievement-making tool */
+            }
             char val[64];
             im_hotkey_name(&D.global, h, val, sizeof(val));
             if (list_row(&l, T(im_hotkey_label(h)), val, NULL)) {
@@ -347,6 +354,9 @@ void scr_settings(void)
                 dash_push(SCR_REMAP);
             }
         }
+        break;
+    case 6:
+        dash_cheevos_settings_rows(&l);
         break;
     }
     list_end(&l);

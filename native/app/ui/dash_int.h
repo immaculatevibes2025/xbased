@@ -31,7 +31,7 @@ typedef struct In {
 enum Screen {
     SCR_MAIN, SCR_GAMES, SCR_GAME, SCR_GAME_SETTINGS, SCR_MODS, SCR_STATES, SCR_SETTINGS, SCR_CONTROLS,
     SCR_REMAP, SCR_MEMORY, SCR_MEMORY_TITLE, SCR_ONLINE, SCR_ABOUT, SCR_INGAME, SCR_INGAME_SLOTS, SCR_STICKS,
-    SCR_TRIGGERS, SCR_BROWSE, SCR_FIND, SCR_CONTENT, SCR_CHEEVOS, SCR_MSEARCH, SCR_CHEEVO_NEW, SCR_WATCH, SCR_TEXT, SCR_ADDR, SCR_COUNT
+    SCR_TRIGGERS, SCR_BROWSE, SCR_FIND, SCR_CONTENT, SCR_CHEEVOS, SCR_MSEARCH, SCR_CHEEVO_NEW, SCR_WATCH, SCR_TEXT, SCR_ADDR, SCR_RA_LOGIN, SCR_COUNT
 };
 
 typedef struct Dash {
@@ -137,6 +137,15 @@ void scr_cheevo_new(void);
 void scr_watch(void);
 void scr_text(void);
 void scr_addr(void);
+void scr_ra_login(void);
+/* achievements=1 in xbased.ini (else no Achievements anywhere), and
+ * achievements.testing=1 (the tools for making them) */
+bool dash_cheevos_on(void);
+bool dash_cheevos_testing(void);
+/* the settings' Achievements tab (dash_cheevos.c) */
+void dash_cheevos_settings_rows(List *l);
+/* xbased.ini given the achievement settings, off, where it hasn't them */
+void dash_cheevos_ini_defaults(void);
 /* the on-screen keyboard (dash_find.c): typing into buf; true on Done */
 bool dash_osk(char *buf, size_t cap, float x, float y, float ks, const In *in);
 void dash_text_add(char *buf, size_t cap, const char *s);

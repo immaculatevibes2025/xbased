@@ -40,6 +40,13 @@ extern "C" {
 /* Reads n (1-4) bytes at the game's virtual address va: false when unmapped. */
 typedef bool (*NcCheevosRead)(uint32_t va, void *buf, unsigned n);
 
+/* The settings (xbased.ini): before the game starts (the app).
+ * Off: nothing read, nothing run, nothing unlocks. Hardcore: no cheats (and,
+ * the app's part, no loading states and no fast forward), as
+ * RetroAchievements' hardcore mode. Encore: those unlocked can unlock again. */
+void nc_cheevos_set_mode(bool enabled, bool hardcore, bool encore);
+bool nc_cheevos_hardcore(void);
+
 /* Where the files are: before the game starts (the app). */
 void nc_cheevos_set_dirs(const char *exe_dir, const char *data_dir);
 /* The title's achievements, notes and watches read (the XBE loaded). */

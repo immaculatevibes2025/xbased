@@ -42,6 +42,7 @@ typedef struct {
 } Note;
 
 static char g_exe_dir[1024], g_data_dir[1024];
+static bool g_enabled = true, g_hardcore, g_encore;
 static uint32_t g_title;
 static Cheevo g_c[NC_CHEEVOS_MAX];
 static unsigned g_n;
@@ -61,6 +62,18 @@ void nc_cheevos_set_dirs(const char *exe_dir, const char *data_dir)
 {
     snprintf(g_exe_dir, sizeof(g_exe_dir), "%s", exe_dir ? exe_dir : "");
     snprintf(g_data_dir, sizeof(g_data_dir), "%s", data_dir ? data_dir : "");
+}
+
+void nc_cheevos_set_mode(bool enabled, bool hardcore, bool encore)
+{
+    g_enabled = enabled;
+    g_hardcore = enabled && hardcore;
+    g_encore = encore;
+}
+
+bool nc_cheevos_hardcore(void)
+{
+    return g_hardcore;
 }
 
 uint32_t nc_cheevos_title(void)
@@ -439,7 +452,7 @@ static unsigned g_frame;
 
 void nc_snapshot_request(void)
 {
-    g_snap_req = 1;
+    g_snap_req = g_title != 0;
 }
 
 int nc_snapshot_take_done(void)
@@ -543,7 +556,9 @@ static void load_all(void)
         snprintf(c->error, sizeof(c->error), "built without rcheevos");
 #endif
     }
-    read_unlocked();
+    if (!g_encore) {
+        read_unlocked();
+    }
     unsigned live = 0;
     for (unsigned i = 0; i < g_n; i++) {
 #ifdef NC_HAVE_RCHEEVOS
@@ -558,6 +573,9 @@ static void load_all(void)
 
 void nc_cheevos_bind(uint32_t title_id)
 {
+    if (!g_enabled) {
+        return;     /* achievements off (xbased.ini): none read, none run */
+    }
     pthread_mutex_lock(&g_lock);
     g_title = title_id;
     load_all();

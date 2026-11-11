@@ -55,6 +55,7 @@
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#include <ctype.h>
 #include <dirent.h>
 #include <math.h>
 #include <fcntl.h>
@@ -647,8 +648,14 @@ static void save_state(int slot)
     }
 }
 
+static bool g_hardcore;     /* achievements' hardcore mode (apply_cfg) */
+
 static void load_state(int slot)
 {
+    if (g_hardcore) {
+        notice(T(S_HARDCORE_BLOCKED), NULL);    /* as RetroAchievements' hardcore mode */
+        return;
+    }
     char path[MAX_PATH * 2], opt[MAX_PATH * 2 + 16];
     state_path(slot, path, sizeof(path));
     const char *err = nc_state_compat(path);
@@ -798,9 +805,45 @@ static void notice(const char *text, const char *after_file)
 
 static int g_cheevo_corner = 3;     /* 0 top left, 1 top right, 2 bottom left, 3 bottom right */
 static bool g_cheevo_sound = true, g_watch_show = true;
+static bool g_cheevos_on, g_cheevos_test, g_cheevo_pop = true, g_cheevo_shot;
+static char g_shot_bmp[MAX_PATH + 160], g_shot_jpg[MAX_PATH + 160];  /* an unlock's screenshot, being made */
+static double g_shot_t0;
 static double g_pop_t0;             /* the pop-up shown since (0: none) */
 static unsigned g_pop_i;            /* its achievement */
 #define POP_LEN 5.2
+
+/* screenshots\<game>-<achievement>-<date>.jpg: the window's next picture
+ * (a BMP, as the screenshot key's), made a JPG once written */
+static void cheevo_shot(const char *name)
+{
+    char dir[MAX_PATH + 32], safe[64];
+    snprintf(dir, sizeof(dir), "%sscreenshots", g_data_dir);
+    mkdir(dir, 0775);
+    size_t k = 0;
+    for (const char *c = name; *c && k + 1 < sizeof(safe); c++) {
+        safe[k++] = (isalnum((unsigned char)*c) || *c == '-') ? *c : '_';
+    }
+    safe[k] = 0;
+    SYSTEMTIME t;
+    GetLocalTime(&t);
+    snprintf(g_shot_jpg, sizeof(g_shot_jpg), "%s/%s-%s-%04d%02d%02d-%02d%02d%02d.jpg", dir, g_key, safe, t.wYear,
+             t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
+    snprintf(g_shot_bmp, sizeof(g_shot_bmp), "%s.bmp", g_shot_jpg);
+    g_shot_t0 = ui_time();
+    hle_present_shot(g_shot_bmp);
+}
+
+static void cheevo_shot_poll(void)
+{
+    if (!g_shot_bmp[0]) {
+        return;
+    }
+    const int r = cheevo_bmp_to_jpg(g_shot_bmp, g_shot_jpg);
+    if (r != 0 || ui_time() - g_shot_t0 > 10) {
+        nc_log("xbased-cheevos", "unlock screenshot %s: %s", g_shot_jpg, r > 0 ? "saved" : "failed");
+        g_shot_bmp[0] = 0;
+    }
+}
 
 /* the next unlock's pop-up, when the last one has gone; its sound */
 static void cheevo_poll(void)
@@ -812,10 +855,13 @@ static void cheevo_poll(void)
     unsigned i;
     if (nc_cheevos_take_unlock(&i)) {
         g_pop_i = i;
-        g_pop_t0 = ui_time();
-        if (g_cheevo_sound) {
+        g_pop_t0 = g_cheevo_pop ? ui_time() : 0;
+        if (g_cheevo_sound && g_cheevo_pop) {
             snd_init();
             snd_play(SND_CHEEVO);
+        }
+        if (g_cheevo_shot && !g_shot_bmp[0]) {
+            cheevo_shot(nc_cheevos_name(i));
         }
     }
 }
@@ -905,6 +951,7 @@ static void overlay_tick(void)
         notice(t, NULL);
     }
     cheevo_poll();
+    cheevo_shot_poll();
     const int snap = nc_snapshot_take_done();
     if (snap) {
         char t[120];
@@ -971,7 +1018,7 @@ static void overlay_tick(void)
         }
     }
     const bool show_notice = g_notice[0] && g_notice_t0 > 0 && now - g_notice_t0 < 2.4;
-    const bool show_pop = cheevo_pop_up(), show_watch = g_watch_show && nc_watch_count() > 0;
+    const bool show_pop = cheevo_pop_up(), show_watch = g_cheevos_test && g_watch_show && nc_watch_count() > 0;
     if (show_notice || show_pop || show_watch) {
         if (!show_notice && g_notice[0] && g_notice_t0 > 0) {
             g_notice[0] = 0;
@@ -1050,6 +1097,14 @@ static void apply_cfg(const Config *global, const Config *game, bool sound)
         }
     }
     g_fx = cfg_bool(global, "ui.fx", true);
+    /* achievements: off unless xbased.ini says achievements=1; the tools for
+     * making them only with achievements.testing=1 */
+    g_cheevos_on = cfg_bool(global, "achievements", false);
+    g_cheevos_test = g_cheevos_on && cfg_bool(global, "achievements.testing", false);
+    g_hardcore = g_cheevos_on && cfg_bool(global, "cheevos.hardcore", false);
+    g_cheevo_pop = cfg_bool(global, "cheevos.notify", true);
+    g_cheevo_shot = cfg_bool(global, "cheevos.screenshot", false);
+    nc_cheevos_set_mode(g_cheevos_on, g_hardcore, cfg_bool(global, "cheevos.encore", false));
     g_cheevo_corner = cfg_int(global, "cheevos.popup", 3) & 3;
     g_cheevo_sound = cfg_bool(global, "cheevos.sound", true);
     g_watch_show = cfg_bool(global, "cheevos.watch", true);
@@ -1617,12 +1672,14 @@ int main(int argc, char *argv[])
                     save_state(ev.key.mod & SDL_KMOD_SHIFT ? 2 : 1);
                 } else if (ev.key.key == g_map.hotkey[IM_HK_LOAD]) {
                     load_state(ev.key.mod & SDL_KMOD_SHIFT ? 2 : 1);
+                } else if (ev.key.key == g_map.hotkey[IM_HK_TURBO] && g_hardcore) {
+                    notice(T(S_HARDCORE_BLOCKED), NULL);
                 } else if (ev.key.key == g_map.hotkey[IM_HK_TURBO]) {
                     nc_win_prop_set("debug.hakux.uncap", "1");  /* frames as fast as they come, while held */
                     nc_win_prop_set("debug.hakux.fpscap", "0");
                 } else if (ev.key.key == g_map.hotkey[IM_HK_SHOT]) {
                     screenshot();
-                } else if (ev.key.key == g_map.hotkey[IM_HK_SNAP]) {
+                } else if (ev.key.key == g_map.hotkey[IM_HK_SNAP] && g_cheevos_test) {
                     nc_snapshot_request();
                 } else if (ev.key.key == g_map.hotkey[IM_HK_MENU]) {
                     ingame_menu(win, &paused, minimized);

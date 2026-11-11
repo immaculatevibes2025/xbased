@@ -2102,6 +2102,7 @@ int dash_run(SDL_Window *win, const char *exe)
     char p[1200];
     snprintf(p, sizeof(p), "%sxbased.ini", cfg_data_dir());
     cfg_load(&D.global, p);
+    dash_cheevos_ini_defaults();
     const bool up = upscale_migrate(&D.global), sh = cfg_shaders_migrate(&D.global);
     if (up || sh) {
         cfg_save(&D.global);
@@ -2354,7 +2355,7 @@ static void scr_ingame(void)
         g_ig_thumbs_stale = true;
         dash_push(SCR_INGAME_SLOTS);
     }
-    if (list_row(&l, T(S_CHEEVOS), NULL, NULL)) {
+    if (dash_cheevos_on() && list_row(&l, T(S_CHEEVOS), NULL, NULL)) {
         D.sel[SCR_CHEEVOS] = 0;
         dash_push(SCR_CHEEVOS);
     }
@@ -2557,6 +2558,7 @@ int dash_ingame(SDL_Window *win, const char *key, const char *title, const char 
         case SCR_WATCH: scr_watch(); break;
         case SCR_TEXT: scr_text(); break;
         case SCR_ADDR: scr_addr(); break;
+        case SCR_RA_LOGIN: scr_ra_login(); break;
         case SCR_GAME_SETTINGS: scr_game_settings(); break;
         case SCR_CONTROLS: scr_controls(); break;
         case SCR_REMAP: scr_remap(); break;

@@ -679,6 +679,16 @@ bool nc_cheevos_export(const char *game_title, char *out, size_t n)
     return rename(tmp, out) == 0;
 }
 
+/* achievements still to unlock (none: no memory read each frame) */
+static unsigned live_count(void)
+{
+    unsigned k = 0;
+    for (unsigned i = 0; i < g_n; i++) {
+        k += g_c[i].state == 0;
+    }
+    return k;
+}
+
 #ifdef NC_HAVE_RCHEEVOS
 static uint32_t RC_CCONV peek(uint32_t address, uint32_t num_bytes, void *ud)
 {
@@ -709,6 +719,9 @@ static void RC_CCONV on_event(const rc_runtime_event_t *e)
 
 void nc_cheevos_frame(NcCheevosRead read)
 {
+    if (!g_enabled || !g_title) {
+        return;     /* achievements off: no memory read, no lock */
+    }
     g_read = read;
     g_frame++;
     if (g_snap_req) {
@@ -717,7 +730,7 @@ void nc_cheevos_frame(NcCheevosRead read)
     }
     pthread_mutex_lock(&g_lock);
 #ifdef NC_HAVE_RCHEEVOS
-    if (g_rt_up && g_n) {
+    if (g_rt_up && live_count()) {
         rc_runtime_do_frame(&g_rt, on_event, peek, NULL, NULL);
     }
 #endif

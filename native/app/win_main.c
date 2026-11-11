@@ -812,12 +812,14 @@ static double g_pop_t0;             /* the pop-up shown since (0: none) */
 static unsigned g_pop_i;            /* its achievement */
 #define POP_LEN 5.2
 
-/* screenshots\<game>-<achievement>-<date>.jpg: the window's next picture
- * (a BMP, as the screenshot key's), made a JPG once written */
+/* achievements\achievement screenshots\<game>-<achievement>-<date>.jpg: the
+ * window's next picture (a BMP, as the screenshot key's), made a JPG once written */
 static void cheevo_shot(const char *name)
 {
-    char dir[MAX_PATH + 32], safe[64];
-    snprintf(dir, sizeof(dir), "%sscreenshots", g_data_dir);
+    char dir[MAX_PATH + 48], safe[64];
+    snprintf(dir, sizeof(dir), "%sachievements", g_data_dir);
+    mkdir(dir, 0775);
+    snprintf(dir, sizeof(dir), "%sachievements/achievement screenshots", g_data_dir);
     mkdir(dir, 0775);
     size_t k = 0;
     for (const char *c = name; *c && k + 1 < sizeof(safe); c++) {

@@ -251,17 +251,10 @@ void scr_cheevos(void)
         D.sel[SCR_WATCH] = 0;
         dash_push(SCR_WATCH);
     }
-    int d = 0;
-    const int corner = cfg_int(&D.global, "cheevos.popup", 3) & 3;
-    if (list_row(&l, T(S_CHEEVO_POPUP), corner_name(corner), &d) || d) {
-        cfg_set_int(&D.global, "cheevos.popup", (corner + (d ? d : 1) + 4) % 4);
-        dash_save_cfg();
-    }
     if (testing && list_row(&l, T(S_SNAP_MENU), NULL, NULL)) {
         nc_snapshot_request();      /* taken as the game runs again */
         dash_toast(T(S_SNAP_ON_RESUME));
     }
-    toggle_row(&l, T(S_CHEEVO_SOUND), "cheevos.sound", true);
     if (testing) {
         toggle_row(&l, T(S_CHEEVO_SHOW_WATCH), "cheevos.watch", true);
     }

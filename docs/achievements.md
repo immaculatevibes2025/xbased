@@ -25,10 +25,11 @@ RetroAchievements account (a place for it: they don't take Original Xbox
 yet, so nothing is sent and the password isn't kept), **Hardcore mode** (no
 loading states, cheats or fast forward), **Encore mode** (unlocked ones can
 unlock again), unlock notifications, their corner and sound, a .jpg
-screenshot (in `screenshots`) at each unlock, and RetroAchievements'
+screenshot (in `achievements\achievement screenshots`) at each unlock, and RetroAchievements'
 leaderboard and rich presence settings, kept for when there's something for
 them to do. The in-game menu gets **Achievements**: the list, and **Lock all
-again**.
+again**. With achievements off nothing of theirs runs; with them on, only
+the achievements still locked are checked each frame.
 
 `achievements.testing=1` adds the memory search, watched addresses, memory
 snapshots (F9), reloading the files and saving in RetroAchievements' format.
